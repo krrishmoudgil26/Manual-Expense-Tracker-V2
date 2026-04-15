@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ExpensePro — Smart Expense Tracker</title>
+  <meta name="description" content="Track your money smarter with ExpensePro — the premium fintech expense tracker." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+  <!-- Ionicons -->
+  <script type="module" src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.esm.js"></script>
+  <script nomodule src="https://unpkg.com/ionicons@7.1.0/dist/ionicons/ionicons.js"></script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+  <!-- ============ TOAST CONTAINER ============ -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- ============ BUDGET ALERT BANNER ============ -->
+  <div id="budget-banner" class="budget-banner hidden" role="alert">
+    <div class="budget-banner-inner">
+      <ion-icon name="warning-outline"></ion-icon>
+      <span id="budget-banner-text"></span>
+      <button class="banner-close" onclick="closeBanner()"><ion-icon name="close-outline"></ion-icon></button>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       AUTH SCREEN
+  ====================================================== -->
+  <div id="auth-screen" class="auth-screen">
+    <!-- Left Panel -->
+    <div class="auth-left">
+      <div class="auth-left-content">
+        <div class="auth-logo">
+          <div class="logo-icon"><ion-icon name="wallet"></ion-icon></div>
+          <span>ExpensePro</span>
+        </div>
+        <div class="auth-hero">
+          <h1>Track your money<br /><span class="gradient-text">smarter.</span></h1>
+          <p>Gain clarity on your finances. Set budgets, track expenses, and unlock real insights — all in one beautifully simple dashboard.</p>
+        </div>
+        <!-- Abstract floating cards decoration -->
+        <div class="deco-cards">
+          <div class="deco-card deco-card-1">
+            <div class="deco-row"><ion-icon name="fast-food-outline"></ion-icon><span>Food & Dining</span></div>
+            <div class="deco-amount expense-color">— $84.50</div>
+          </div>
+          <div class="deco-card deco-card-2">
+            <div class="deco-row"><ion-icon name="checkmark-circle-outline" style="color:var(--green)"></ion-icon><span>Salary</span></div>
+            <div class="deco-amount income-color">+ $3,200.00</div>
+          </div>
+          <div class="deco-card deco-card-3">
+            <div class="deco-label">Monthly Budget</div>
+            <div class="deco-progress-bar"><div class="deco-progress-fill" style="width:62%"></div></div>
+            <div class="deco-pct">62% used</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel: Form -->
+    <div class="auth-right">
+      <div class="auth-form-box glass-card">
+        <!-- Tab Toggle -->
+        <div class="auth-tabs" role="tablist">
+          <button id="tab-login" class="auth-tab active" role="tab" aria-selected="true" onclick="switchTab('login')">Sign In</button>
+          <button id="tab-register" class="auth-tab" role="tab" aria-selected="false" onclick="switchTab('register')">Create Account</button>
+          <div class="auth-tab-slider" id="tab-slider"></div>
+        </div>
+
+        <form id="auth-form" onsubmit="handleAuth(event)" novalidate>
+          <div class="form-group">
+            <label class="form-label" for="auth-username">Username</label>
+            <div class="input-wrap">
+              <ion-icon name="person-outline" class="input-icon"></ion-icon>
+              <input id="auth-username" type="text" class="form-input" placeholder="Enter your username" autocomplete="username" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label" for="auth-password">Password</label>
+            <div class="input-wrap">
+              <ion-icon name="lock-closed-outline" class="input-icon"></ion-icon>
+              <input id="auth-password" type="password" class="form-input" placeholder="Enter your password" autocomplete="current-password" required />
+              <button type="button" class="pw-toggle" id="pw-toggle" onclick="togglePw()" tabindex="-1">
+                <ion-icon name="eye-outline" id="pw-icon"></ion-icon>
+              </button>
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary btn-full" id="auth-submit-btn">
+            <span id="auth-btn-label">Sign In</span>
+            <div class="btn-spinner hidden" id="auth-spinner"></div>
+          </button>
+        </form>
+        <p class="auth-switch-text">
+          <span id="auth-switch-hint">Don't have an account?</span>
+          <button class="link-btn" onclick="switchTab('register')" id="auth-switch-link">Create one →</button>
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================
+       APP SHELL (hidden until logged in)
+  ====================================================== -->
+  <div id="app-shell" class="app-shell hidden">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <div class="logo-icon sm"><ion-icon name="wallet"></ion-icon></div>
+        <span class="sidebar-brand">Expense<strong>Pro</strong></span>
+      </div>
+
+      <nav class="sidebar-nav" role="navigation" aria-label="Main menu">
+        <button class="nav-btn active" id="nav-dashboard" onclick="navigateTo('dashboard', this)">
+          <ion-icon name="grid-outline"></ion-icon><span>Dashboard</span>
+        </button>
+        <button class="nav-btn" id="nav-add" onclick="navigateTo('add', this)">
+          <ion-icon name="add-circle-outline"></ion-icon><span>Add Expense</span>
+        </button>
+        <button class="nav-btn" id="nav-expenses" onclick="navigateTo('expenses', this)">
+          <ion-icon name="receipt-outline"></ion-icon><span>Expenses</span>
+        </button>
+        <button class="nav-btn" id="nav-analytics" onclick="navigateTo('analytics', this)">
+          <ion-icon name="bar-chart-outline"></ion-icon><span>Analytics</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="sidebar-user">
+          <div class="user-avatar" id="sidebar-avatar">U</div>
+          <div class="user-info">
+            <div class="user-name" id="sidebar-username">User</div>
+            <div class="user-role">Personal Account</div>
+          </div>
+        </div>
+        <button class="logout-btn" onclick="handleLogout()" title="Logout">
+          <ion-icon name="log-out-outline"></ion-icon>
+        </button>
+      </div>
+    </aside>
+
+    <!-- MAIN AREA -->
+    <div class="main-area">
+
+      <!-- TOP BAR -->
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Toggle menu">
+            <ion-icon name="menu-outline"></ion-icon>
+          </button>
+          <h2 class="page-heading" id="page-heading">Dashboard</h2>
+        </div>
+        <div class="topbar-right">
+          <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme" id="theme-btn">
+            <ion-icon name="moon-outline" id="theme-icon"></ion-icon>
+          </button>
+          <div class="topbar-user">
+            <div class="user-avatar sm" id="topbar-avatar">U</div>
+            <span id="topbar-username">User</span>
+          </div>
+          <button class="icon-btn danger-hover" onclick="handleLogout()" title="Logout">
+            <ion-icon name="log-out-outline"></ion-icon>
+          </button>
+        </div>
+      </header>
+
+      <!-- CONTENT AREA -->
+      <main class="content-area">
+
+        <!-- ============ VIEW: DASHBOARD ============ -->
+        <section id="view-dashboard" class="view active-view">
+
+          <!-- Skeleton (shown while loading) -->
+          <div id="dash-skeleton" class="skeleton-grid">
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+            <div class="skeleton-card"></div>
+          </div>
+
+          <!-- Actual Content -->
+          <div id="dash-content" class="hidden">
+
+            <!-- Summary Cards -->
+            <div class="summary-grid">
+              <div class="summary-card glass-card" id="card-balance">
+                <div class="summary-card-header">
+                  <div class="card-icon-wrap indigo">
+                    <ion-icon name="wallet-outline"></ion-icon>
+                  </div>
+                  <span class="card-badge" id="balance-trend"></span>
+                </div>
+                <div class="summary-card-body">
+                  <div class="card-label">Net Balance</div>
+                  <div class="card-value" id="val-balance">$0.00</div>
+                </div>
+              </div>
+
+              <div class="summary-card glass-card" id="card-spending">
+                <div class="summary-card-header">
+                  <div class="card-icon-wrap rose">
+                    <ion-icon name="trending-down-outline"></ion-icon>
+                  </div>
+                </div>
+                <div class="summary-card-body">
+                  <div class="card-label">Total Expenses</div>
+                  <div class="card-value" id="val-expenses">$0.00</div>
+                </div>
+              </div>
+
+              <div class="summary-card glass-card" id="card-income">
+                <div class="summary-card-header">
+                  <div class="card-icon-wrap emerald">
+                    <ion-icon name="trending-up-outline"></ion-icon>
+                  </div>
+                </div>
+                <div class="summary-card-body">
+                  <div class="card-label">Total Income</div>
+                  <div class="card-value" id="val-income">$0.00</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Budget Progress -->
+            <div class="glass-card budget-card" id="budget-section">
+              <div class="budget-card-header">
+                <div>
+                  <h3>Monthly Budget</h3>
+                  <p class="sub-text">Track your spending limit</p>
+                </div>
+                <div class="budget-set-wrap">
+                  <input type="number" id="budget-input" class="budget-input" placeholder="Set limit…" min="0" step="10" />
+                  <button class="btn btn-sm btn-primary" onclick="saveBudget()">Save</button>
+                </div>
+              </div>
+              <div class="budget-progress-wrap">
+                <div class="budget-labels">
+                  <span id="budget-spent-label">Spent: $0.00</span>
+                  <span id="budget-limit-label">Limit: Not set</span>
+                </div>
+                <div class="progress-track">
+                  <div class="progress-bar" id="budget-bar"></div>
+                </div>
+                <div class="budget-remaining" id="budget-remaining-text">Set a budget to track your spending</div>
+              </div>
+            </div>
+
+            <!-- Insight Cards -->
+            <div class="insights-row" id="insights-row">
+              <div class="insight-chip glass-card">
+                <ion-icon name="flame-outline" class="insight-icon amber"></ion-icon>
+                <p id="insight-top-cat">Loading insights…</p>
+              </div>
+              <div class="insight-chip glass-card">
+                <ion-icon name="calculator-outline" class="insight-icon violet"></ion-icon>
+                <p id="insight-avg-daily">—</p>
+              </div>
+              <div class="insight-chip glass-card">
+                <ion-icon name="shield-checkmark-outline" class="insight-icon" id="insight-budget-icon"></ion-icon>
+                <p id="insight-budget-msg">Set a budget to get alerts</p>
+              </div>
+            </div>
+
+            <!-- Recent Transactions -->
+            <div class="glass-card recent-card">
+              <div class="section-header">
+                <h3>Recent Transactions</h3>
+                <button class="link-btn" onclick="navigateTo('expenses', document.getElementById('nav-expenses'))">View all →</button>
+              </div>
+              <div id="recent-list">
+                <!-- filled by JS -->
+              </div>
+            </div>
+
+          </div><!-- /dash-content -->
+        </section>
+
+        <!-- ============ VIEW: ADD EXPENSE ============ -->
+        <section id="view-add" class="view">
+          <div class="form-container">
+            <div class="glass-card form-card">
+              <div class="form-card-header">
+                <div class="form-card-icon"><ion-icon name="add-circle-outline"></ion-icon></div>
+                <div>
+                  <h3 id="add-form-title">New Transaction</h3>
+                  <p class="sub-text">Record an expense or income</p>
+                </div>
+              </div>
+
+              <form id="add-expense-form" onsubmit="handleAddExpense(event)" novalidate>
+                <!-- Type Selector -->
+                <div class="type-selector">
+                  <button type="button" class="type-btn active" id="type-expense" onclick="selectType('expense')">
+                    <ion-icon name="trending-down-outline"></ion-icon> Expense
+                  </button>
+                  <button type="button" class="type-btn" id="type-income" onclick="selectType('income')">
+                    <ion-icon name="trending-up-outline"></ion-icon> Income
+                  </button>
+                </div>
+
+                <div class="form-row">
+                  <div class="form-group">
+                    <label class="form-label" for="exp-amount">Amount ($)</label>
+                    <div class="input-wrap">
+                      <ion-icon name="cash-outline" class="input-icon"></ion-icon>
+                      <input id="exp-amount" type="number" class="form-input" placeholder="0.00" step="0.01" min="0.01" required />
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label class="form-label" for="exp-date">Date</label>
+                    <div class="input-wrap">
+                      <ion-icon name="calendar-outline" class="input-icon"></ion-icon>
+                      <input id="exp-date" type="date" class="form-input" required />
+                    </div>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="exp-category">Category</label>
+                  <div class="input-wrap">
+                    <ion-icon name="pricetag-outline" class="input-icon"></ion-icon>
+                    <select id="exp-category" class="form-input" required>
+                      <!-- filled by JS based on type -->
+                    </select>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label class="form-label" for="exp-desc">Description</label>
+                  <div class="input-wrap">
+                    <ion-icon name="pencil-outline" class="input-icon"></ion-icon>
+                    <input id="exp-desc" type="text" class="form-input" placeholder="What was this for?" required />
+                  </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-full" id="add-submit-btn">
+                  <ion-icon name="checkmark-outline"></ion-icon>
+                  <span id="add-btn-label">Save Transaction</span>
+                  <div class="btn-spinner hidden" id="add-spinner"></div>
+                </button>
+              </form>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ VIEW: EXPENSES LIST ============ -->
+        <section id="view-expenses" class="view">
+          <div class="glass-card list-card">
+            <!-- Toolbar -->
+            <div class="list-toolbar">
+              <div class="search-wrap">
+                <ion-icon name="search-outline"></ion-icon>
+                <input type="text" id="search-query" class="search-input" placeholder="Search transactions…" oninput="applyFilters()" />
+              </div>
+              <div class="filter-wrap">
+                <select id="filter-cat" class="filter-select" onchange="applyFilters()">
+                  <option value="all">All Categories</option>
+                </select>
+                <select id="filter-type" class="filter-select" onchange="applyFilters()">
+                  <option value="all">All Types</option>
+                  <option value="expense">Expense</option>
+                  <option value="income">Income</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Table -->
+            <div class="table-wrap">
+              <table class="exp-table" id="exp-table">
+                <thead>
+                  <tr>
+                    <th onclick="sortBy('date')" class="sortable">Date <ion-icon name="swap-vertical-outline"></ion-icon></th>
+                    <th>Description</th>
+                    <th onclick="sortBy('category')" class="sortable">Category <ion-icon name="swap-vertical-outline"></ion-icon></th>
+                    <th>Type</th>
+                    <th onclick="sortBy('amount')" class="sortable">Amount <ion-icon name="swap-vertical-outline"></ion-icon></th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="exp-table-body">
+                  <!-- filled by JS -->
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="empty-state" class="empty-state hidden">
+              <div class="empty-icon"><ion-icon name="receipt-outline"></ion-icon></div>
+              <h3>No transactions found</h3>
+              <p>Try adjusting filters or add a new expense.</p>
+              <button class="btn btn-primary" onclick="navigateTo('add', document.getElementById('nav-add'))">
+                <ion-icon name="add-outline"></ion-icon> Add First Expense
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- ============ VIEW: ANALYTICS ============ -->
+        <section id="view-analytics" class="view">
+          <div class="analytics-grid">
+
+            <div class="glass-card chart-card">
+              <div class="chart-card-header">
+                <h3>Expense by Category</h3>
+                <p class="sub-text">Distribution of your spending</p>
+              </div>
+              <div class="chart-wrap">
+                <canvas id="pie-chart"></canvas>
+              </div>
+              <div id="pie-empty" class="chart-empty hidden">
+                <ion-icon name="pie-chart-outline"></ion-icon>
+                <p>No expense data yet</p>
+              </div>
+            </div>
+
+            <div class="glass-card chart-card">
+              <div class="chart-card-header">
+                <h3>Spending Over Time</h3>
+                <p class="sub-text">Last 30 days daily expenses</p>
+              </div>
+              <div class="chart-wrap">
+                <canvas id="bar-chart"></canvas>
+              </div>
+              <div id="bar-empty" class="chart-empty hidden">
+                <ion-icon name="bar-chart-outline"></ion-icon>
+                <p>No expense data for this period</p>
+              </div>
+            </div>
+
+          </div>
+        </section>
+
+      </main>
+    </div><!-- /main-area -->
+  </div><!-- /app-shell -->
+
+  <script src="app.js"></script>
+</body>
+</html>
