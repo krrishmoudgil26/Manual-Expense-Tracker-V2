@@ -484,13 +484,12 @@ function applyFilters() {
     if (aVal > bVal) return  1 * state.sortDir;
     return 0;
   });
-  renderTable();
 }
 
 function sortBy(key) {
   if (state.sortKey === key) state.sortDir *= -1;
   else { state.sortKey = key; state.sortDir = -1; }
-  applyFilters();
+  renderTable();
 }
 
 function renderTable() {
